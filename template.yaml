@@ -9,7 +9,10 @@ Parameters:
     Type: String
     Default: "127311923021"
     Description: "for us-east-1 => https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html"
-
+  AcmARN:
+    Type: String
+    Description: AcmARN
+    
 Resources:
   ###############################
   # Network
@@ -219,12 +222,29 @@ Resources:
             FromPort: 443
             ToPort: 443
             CidrIp: 0.0.0.0/0
-  WebListenerHTTP:
+  WebListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref WebTargetGroup
+      LoadBalancerArn: !Ref WebLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref AcmARN
+  WebListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            StatusCode: HTTP_301
+            Host: '#{host}'
+            Path: '/#{path}'
+            Port: '443'
+            Protocol: HTTPS
+            Query: '#{query}'
       LoadBalancerArn: !Ref WebLoadBalancer
       Port: 80
       Protocol: HTTP
